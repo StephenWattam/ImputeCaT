@@ -6,17 +6,15 @@ module Impute::Import
 
 
   require_relative './importer.rb'
+  require_relative '../document.rb'
 
-
-
-  def CSVImporter < Importer
+  class CSVImporter < Impute::Import::Importer
     require 'csv'
 
     CSV_OPTS = {headers: true}
 
-    def initialize(csv_file, id_field = nil, fields = [])
+    def initialize(csv_file, fields = [], id_field = nil)
       @file     = csv_file
-      @csv_opts = csv_opts
 
       fail "Input file does not exist: #{csv_file}" unless File.exist?(csv_file)
 
@@ -43,8 +41,14 @@ module Impute::Import
     # retrieve a single document's data
     def fetch_document
       # read row
+      row = @csv.shift
+      return unless row
+      doc_data = row.to_hash.select { |k, v| @fields.include?(k) }
+
       # align entries
       # return Document.new(...
+      return Impute::Document.new( doc_data ) unless @id_field
+      return Impute::Document.new( doc_data, row.field(@id_field) )
     end
 
     # return a list of viable dimnensions
@@ -55,8 +59,4 @@ module Impute::Import
 
   end
 
-
-
 end
-
-
