@@ -28,6 +28,15 @@ module Impute
       @documents << document
     end
 
+    def dimensions
+      @dimensions
+    end
+
+    def [](dimension)
+      @dimensions[dimension]
+    end
+    alias_method :distribution, :[]
+
     def to_s
       "#<Corpus:#{@dimensions.size}:#{object_id}>"
     end
@@ -37,13 +46,14 @@ module Impute
     # of all dimensions not mentioned in the list given
     # values in the control_for hash.
     #
-    # XXX: May be incredibly slow for large, high-dimensional corpora.
-    def conditional_corpus(dim, control_for = {})
+    # control_for is:
+    #  {:dimension => lambda{|value, document_value| blah return boolean } }
+    def conditional_corpus(control_for = {})
 
       # Construct new distributions for the
       # dimensions in this corpus
       dims = {}
-      dims.keys.each do |k|
+      (dims.keys - control_for.keys).each do |k|
         dims[k] = @dimensions[k].class.new()
       end
       new_corpus = Corpus.new(dims)
@@ -51,33 +61,20 @@ module Impute
       # Add only documents matching the control_for items.
       @documents.each do |doc|
         select = false
-        control_for.each do |dim, value|
+        control_for.each do |dim, value_or_lambda|
           # Skip if already selected else select
           select and next
-          select = (doc.dimensions[dim] == value)
+          if value_or_lambda.is_a?(Proc)
+            select = (value_or_lambda.call( doc.dimensions[dim] ))
+          else
+            select = (value_or_lambda == doc.dimensions[dim] )
+          end
         end
 
         new_corpus.add(doc) if select
       end
 
       return new_corpus
-    end
-
-
-    # Return the marginal distribution for a given dimension
-    def distribution(dim)
-      @dimnensions[dim]
-    end
-
-    # Return a document randomly
-    # sampled from the distribution
-    def random_document_dist
-      dims = {}
-      @dimensions.each do |dim, dist|
-        dims[dim] = dist.rand
-      end
-
-      return Impute::Document.new(dims)
     end
 
     # Write to an IO handle

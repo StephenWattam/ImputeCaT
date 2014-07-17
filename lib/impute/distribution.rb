@@ -27,6 +27,9 @@ module Impute
 
   end
 
+  class ContinuousDistribution < Distribution
+  end
+
 
 
   # Distribution for discrete metadata types
@@ -57,7 +60,7 @@ module Impute
     end
 
     def sample(value)
-      @bins[value] || 0
+      (@bins[value] || 0) / @n
     end
 
   end
@@ -65,28 +68,20 @@ module Impute
   ## A distribution that applies gaussian kernels
   ## to points in order to provide pseudo-continuous
   ## behaviour.
-  class SmoothedGaussianDistribution < Distribution
+  class SmoothedGaussianDistribution < ContinuousDistribution
 
     require 'securerandom'
 
-    # Z score to overestimate min/max
-    STDEV_OVERESTIMATE = 3  # 3 is 0.13% beyond bounds.
     TWO_PI             = Math::PI * 2    # It is what it is.
-
-    # Approximate Y maximum by sampling at @bandwidth/10 intervals
-    Y_APPROX_RESOLUTION = 10
 
     # Bandwidth is 1 stdev
     def initialize(bandwidth)
       @points = []
-      @n      = 0
       @min    = 0
       @max    = 0
 
       @bandwidth          = bandwidth
-      @overestimate_tails = bandwidth * STDEV_OVERESTIMATE
 
-      @real_y_max = nil
       @cache      = {}
     end
 
@@ -100,87 +95,61 @@ module Impute
       @max = [value, @max].max
 
       # Invalidate any y maximum
-      @real_y_max = nil
       @cache      = {}
-
-      @n += 1 
     end
 
-    # Use rejection sampling to find a point under
-    # the estimated CDF
+    # Sample from the whole sum-of-gaussians PDF
     def rand
 
+      # select which gaussian distribution to sample from at uniform
+      point = @points[SecureRandom.random_number(@points.length)]
 
-      # Approximate the y maximum so our rejection sampling
-      # isn't horribly inefficient
-      approximate_real_y_max unless @real_y_max
-    
-      puts "x bounds: #{@min}, #{@max}"
-      puts "approx max: #{@real_y_max}"
+      # puts "--> #{point}"
 
-      # At this point the maximum possible value of Y is @n,
-      # but that is usually an overestimate.
-      rnd        = nil
-      threshold  = nil
-      iterations = 0
-      while(!rnd || rnd > threshold)
+      # Select a point on X that is within the distribution.
+      # We don't care about Y, it only exists to weight overlapping regions.
+      x, _ = gaussian(point, @bandwidth)
 
-        # get a uniform random number within min/max including
-        # overestimate for the tails of the smoothing
-        xpos = SecureRandom.random_number * ((@max - @min) + 2 * STDEV_OVERESTIMATE) - @min - STDEV_OVERESTIMATE
-
-        # Sample the distribution at that point
-        threshold = sample(xpos)
-
-        # Uniform random number up to max of the overall distribution
-        rnd = SecureRandom.random_number * @real_y_max
-        iterations += 1
-      end
-
-      warn "Rejected #{iterations} numbers < #{@n}"
-      return rnd
+      return x
     end
 
-    def sample(x)
+    # Return probability of seeing x.
+    def sample(x, skip_cache = false)
       # Loop over points and compute contribution
       # from each.  Stdev is @bandwidth
       y = 0
 
-      return @cache[x] if @cache[x]
+      return @cache[x] if !skip_cache && @cache[x]
 
       @points.each do |mean|
-        y += (1.0 / (@bandwidth * Math.sqrt( TWO_PI ))) * Math.exp( -1 * ((x - mean) ** 2) / (2 * @bandwidth ** 2) )
+        y += (1.0 / (@bandwidth * Math.sqrt( TWO_PI ))) * 
+          Math.exp( -1 * ((x - mean) ** 2) / (2 * @bandwidth ** 2) )
       end
 
       # puts "x bounds: #{@min}, #{@max}"
       # puts "Sample at #{x} = #{y}"
 
       @cache[x] = y
-      return y
+      return y / @points.length
     end
 
     private
 
-    # Approximate the y max of the distribution
-    # by slicing it into @bandwidth/APPROXIMATION_RESOLUTION
-    def approximate_real_y_max
-      max = nil
-
-      @points.each do |p|
-        puts "#{max} --> #{p}"
-        (p - STDEV_OVERESTIMATE .. p + STDEV_OVERESTIMATE).step( @bandwidth / Y_APPROX_RESOLUTION ) do |x|
-          y = sample(x)
-          max = y if !max || max < y
-        end
-      end
-      # (@min - STDEV_OVERESTIMATE .. @max + STDEV_OVERESTIMATE).step( @bandwidth / Y_APPROX_RESOLUTION ) do |x|
-      # end
-
-      @real_y_max = max || 0
+    # Thanks to http://stackoverflow.com/questions/5825680/code-to-generate-gaussian-normally-distributed-random-numbers-in-ruby
+    def gaussian(mean, stddev) 
+      theta = 2 * Math::PI * SecureRandom.random_number
+      rho = Math.sqrt(-2 * Math.log(1 - SecureRandom.random_number))
+      scale = stddev * rho
+      x = mean + scale * Math.cos(theta)
+      y = mean + scale * Math.sin(theta)
+      return x, y
     end
 
   end
 
+
+
+  
 
 end
 

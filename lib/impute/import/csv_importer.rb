@@ -51,7 +51,7 @@ module Impute::Import
       return Impute::Document.new( doc_data, row.field(@id_field) )
     end
 
-    # return a list of viable dimnensions
+    # return a list of viable dimensions
     def list_dimensions
       # Read headers
     end
