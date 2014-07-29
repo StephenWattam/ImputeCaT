@@ -9,10 +9,6 @@ module Impute::Sample
 
   class MarginalSampler < Sampler 
 
-    def initialize(corpus)
-      @corpus = corpus
-    end
-
     def get
       dims = {}
       @corpus.dimensions.each do |dim, dist|

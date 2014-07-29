@@ -6,6 +6,8 @@ module Impute
 
   class Corpus
 
+    attr_reader :documents
+
     # Create a new Corpus, from
     # a list of important dimensions of the format:
     #
@@ -42,32 +44,53 @@ module Impute
     end
 
 
+    def sample(document, ignore_missing = true)
+      p = 1
+
+      @dimensions.each do |dim, dist|
+        # puts "# #{p}"
+        if document.dimensions[dim] == nil
+          p = 0 unless ignore_missing
+        else
+          # puts "#> #{dim} = #{document.dimensions[dim]} : #{dist.sample(document.dimensions[dim])} ( #{dist} )"
+          p *= dist.sample(document.dimensions[dim])
+        end
+      end
+
+      return p
+    end
+
     # Compute and return the conditional distribution
     # of all dimensions not mentioned in the list given
     # values in the control_for hash.
     #
     # control_for is:
     #  {:dimension => lambda{|value, document_value| blah return boolean } }
-    def conditional_corpus(control_for = {})
+    def conditional_corpus(control_for = {}, window = 0)
 
       # Construct new distributions for the
       # dimensions in this corpus
       dims = {}
-      (dims.keys - control_for.keys).each do |k|
-        dims[k] = @dimensions[k].class.new()
+      (@dimensions.keys - control_for.keys).each do |k|
+        dims[k] = @dimensions[k].dup
       end
       new_corpus = Corpus.new(dims)
+
+      # Epic debug.
+      # puts "This corpus has #{@dimensions.length} dimensions and will condition on #{control_for.length} to produce one with #{dims.length}.  They are: \n - #{@dimensions.keys.join("\n - ")}"
 
       # Add only documents matching the control_for items.
       @documents.each do |doc|
         select = false
-        control_for.each do |dim, value_or_lambda|
+        control_for.each do |dim, value|
           # Skip if already selected else select
           select and next
-          if value_or_lambda.is_a?(Proc)
-            select = (value_or_lambda.call( doc.dimensions[dim] ))
+          if @dimensions[dim].is_a?(Impute::ContinuousDistribution)
+            dim_value = doc.dimensions[dim].to_f
+            # puts "#{value - window} < #{dim_value} < #{value + window}"
+            select =  dim_value >= (value - window) && dim_value <= (value + window)
           else
-            select = (value_or_lambda == doc.dimensions[dim] )
+            select = (value == doc.dimensions[dim] )
           end
         end
 

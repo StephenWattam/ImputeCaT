@@ -16,6 +16,10 @@ module Impute
       warn "STUB: rand in distribution.rb"
     end
 
+    def dup
+      self.class.new
+    end
+
     def sample(value)
 
     end
@@ -60,7 +64,7 @@ module Impute
     end
 
     def sample(value)
-      (@bins[value] || 0) / @n
+      (@bins[value] || 0).to_f / @n.to_f
     end
 
   end
@@ -83,6 +87,11 @@ module Impute
       @bandwidth          = bandwidth
 
       @cache      = {}
+    end
+
+    # Duplicate with same bandwidth
+    def dup
+      self.class.new(@bandwidth)
     end
 
     def add(value)
@@ -117,7 +126,7 @@ module Impute
     def sample(x, skip_cache = false)
       # Loop over points and compute contribution
       # from each.  Stdev is @bandwidth
-      y = 0
+      y = 0.0
 
       return @cache[x] if !skip_cache && @cache[x]
 

@@ -7,6 +7,7 @@ module Impute::Import
 
   require_relative './importer.rb'
   require_relative '../document.rb'
+  require_relative '../summarise/heuristic.rb'
 
   class CSVImporter < Impute::Import::Importer
     require 'csv'
@@ -19,7 +20,7 @@ module Impute::Import
       fail "Input file does not exist: #{csv_file}" unless File.exist?(csv_file)
 
       @id_field = id_field
-      @fields   = fields
+      @fields   = fields.map { |f| f.is_a?(Impute::Summarise::Heuristic) ? f.name : f.to_s }
 
       # Open CSV file
       @csv = CSV.open(@file, "r", CSV_OPTS)

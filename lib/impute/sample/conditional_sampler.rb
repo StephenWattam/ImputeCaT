@@ -20,7 +20,7 @@ module Impute::Sample
     require 'securerandom'
 
     def initialize(corpus, num_conditions = 1, continuous_sample_width = 0)
-      @corpus                   = corpus
+      super(corpus)
       @num_conditions           = num_conditions
       @continuous_sample_width  = continuous_sample_width
     end
@@ -37,41 +37,67 @@ module Impute::Sample
       controlled_values = {}
       controlled_dims.each do |dim|
                                    puts "--> '#{dim}"
-        controlled_values[dim] = case @corpus.dimensions[dim]
-                                 when Impute::ContinuousDistribution
-                                   select_random_continuous_value(@corpus.dimensions[dim])
-                                 when Impute::DiscreteDistribution
-                                   select_random_discrete_value(@corpus.dimensions[dim])
-                                 else
-                                   nil
-                                 end
+        controlled_values[dim] = @corpus.dimensions[dim].rand
       end
 
       puts "Conditions: #{controlled_values}"
 
       # Generate conditional distribution
-      conditional_distribution = @corpus.conditional_corpus(controlled_values)
+      conditional_distribution = @corpus.conditional_corpus(controlled_values, @continuous_sample_width)
       sampler = Impute::Sample::MarginalSampler.new(conditional_distribution)
 
       # Sample from that randomly
       return sampler.get
     end
 
-    private
+  end
 
-    def select_random_discrete_value(distribution)
-      distribution.rand
+
+
+
+
+  class FullConditionalSampler < Sampler
+
+
+    require_relative '../distribution.rb'
+    require_relative 'marginal_sampler.rb'
+    require 'securerandom'
+
+    def initialize(corpus, continuous_sample_width)
+      super(corpus)
+      @continuous_sample_width = continuous_sample_width
     end
 
-    def select_random_continuous_value(distribution)
-      ideal_value = distribution.rand
-      return lambda { |value| 
-        (ideal_value.to_f - value.to_f).abs <= @continuous_sample_width
-      }
+    def get
+
+      conditioned = @corpus
+      conditions  = {}
+
+      puts "Selecting random document from #{@corpus}..."
+      puts " - dims: #{conditioned.dimensions.length}, docs: #{conditioned.documents.length}" #// Values: #{conditions}"
+      while conditioned.dimensions.length > 1
+
+        # Condition on random variable
+        dim_to_condition_on = conditioned.dimensions.keys.sample
+        value_to_condition_on = conditioned.dimensions[dim_to_condition_on].rand
+
+        conditioned = conditioned.conditional_corpus( {dim_to_condition_on => value_to_condition_on }, @continuous_sample_width)
+        conditions[dim_to_condition_on] = value_to_condition_on
+        
+        
+        puts " - dims: #{conditioned.dimensions.length}, docs: #{conditioned.documents.length} (#{dim_to_condition_on} == #{value_to_condition_on})"
+      end
+
+
+      # Here the corpus only has one dimension, so sample from it
+      dim, dist = conditioned.dimensions.first
+      conditions[dim] = dist.rand
+
+      # require 'pry'; pry binding;
+      return Impute::Document.new(conditions)
     end
 
   end
-
 
 
 end
