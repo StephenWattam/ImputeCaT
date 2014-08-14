@@ -12,7 +12,7 @@ require 'bundler/setup'
 require_relative './lib/impute'
 
 
-TARGET_N = 100
+# TARGET_N = 100
 
 # # Personal corpus data
 # FILE   = './test/codes.csv'
@@ -76,15 +76,15 @@ sampler = Impute::Sample::FullConditionalSampler.new(corpus, 30 * 1.645)
 
 
 # --------------------------------
-puts "Retrieving #{TARGET_N} docs..."
-TARGET_N.times do |n|
-
-  doc = sampler.get
-  doc.describe
-  puts "-> #{corpus.sample(doc)}"
-
-  # puts "#{doc.dimensions['computed_words']}"
-end
+#puts "Retrieving #{TARGET_N} docs..."
+#TARGET_N.times do |n|
+#
+ # doc = sampler.get
+ # doc.describe
+ # puts "-> #{corpus.sample(doc)}"
+##
+#  # puts "#{doc.dimensions['computed_words']}"
+#end
 
 
 
@@ -93,24 +93,34 @@ end
 # Azure search (bing)
 SEARCH_KEY = 'RrPfZ/3LTmimYP4kGtvZHmXV9iNzhf9iZn4A7+Ry9WE'
 
+AUDIENCE_LEVEL_FLEISCH_SCORES = {
+  'low' =>  80,
+  'med' =>  55,
+  'high' => 30
+}
+
+
 # --------------------------------
 
 puts "Loading doc store"
 doc_store = nil
-doc_store = Impute::DocumentStore.read("./test/fringe") if File.exist?("./test/fringe")
+# doc_store = Impute::DocumentStore.read("./test/fringe") if File.exist?("./test/fringe")
 puts "Doc store has #{doc_store.length} documents" if doc_store
+
 
 
 
 # Define heuristics
 HEURISTICS = {
-  'Word Total' => Impute::Summarise::WordCount.new( {'en' => './resources/stoplists/English.txt'}, 'en', SEARCH_KEY )
+  'Word Total' => Impute::Summarise::WordCount.new( ),
+  'GENRE'      => Impute::Summarise::Genre.new('resources/bnc_genre_frequencies/', './resources/stoplists/English.txt'),
+  'Aud Level'   => Impute::Summarise::AudienceLevel.new(AUDIENCE_LEVEL_FLEISCH_SCORES, 'med'),
 }
 
 # Define search strategies
 SEARCH_STRATEGIES = [
   # STUFF
-  Impute::Retrieve::Directed::BingGenreKeywordRetriever.new('./resources/bnc_genre_keywords/', 'GENRE', 'Language'),
+  Impute::Retrieve::Directed::BingGenreKeywordRetriever.new(SEARCH_KEY, './resources/bnc_genre_keywords/', 'GENRE', 'Language'),
 ]
 
 
@@ -125,9 +135,8 @@ puts "Retrieving documents..."
 cat.seek_documents
 
 puts "Saving doc store..."
-cat.fringe.write("./test/fringe")
+# cat.fringe.write("./test/fringe")
 
-require 'pry'
-pry binding;
+require 'pry'; pry binding;
 
 

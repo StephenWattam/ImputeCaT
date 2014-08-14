@@ -19,14 +19,17 @@ module Impute::Retrieve
 
     attr_reader :links
 
-    def initialize(key, keywords = [])
+    def initialize(key, keywords = [], market = 'en-GB')
       fail "No keywords given" unless keywords.length > 0
       @key = key
       fail "No bing key given" unless @key
       @keywords = keywords.map{|k| k.to_s }
 
+      # FIXME: use the market.
+      @market = market
+
       @links = []
-      @failures = 0 
+      @failures = 0
     end
 
     def links_remaining
@@ -49,7 +52,7 @@ module Impute::Retrieve
 
     def search
       authKey = Base64.strict_encode64("#{@key}:#{@key}")
-      http = Curl.get(API_ENDPOINT, {:$format => "json", :Query   => "'#{@keywords.join(' ')}'"}) do |http|
+      http = Curl.get(API_ENDPOINT, {:$format => "json", :Query => "'#{@keywords.join(' ')}'"}) do |http|
         http.headers['Authorization'] = "Basic #{authKey}"
         # http.verbose = true
       end
@@ -60,7 +63,7 @@ module Impute::Retrieve
         search_data = JSON.parse(http.body_str)
 
         links += search_data['d']['results']
-        puts "links: #{links.length}"
+        puts "[bing] links: #{links.length}"
 
       rescue JSON::ParserError
         fail "Error parsing result from Bing search.  Perhaps you've exceeded your allowance?"
@@ -82,7 +85,8 @@ module Impute::Retrieve
       retriever = Spider.new([url])
         # URLRetriever.new(url)
       doc = retriever.retrieve  # Oh so Java-y :-(
-      
+      return nil unless doc
+
       # Fill in any missing meta
       doc.meta = doc.meta.merge(meta)
 

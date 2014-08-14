@@ -18,12 +18,18 @@ module Impute
       @meta       = meta
     end
 
+    # Access a dimension by name
+    def [](dimname)
+      @dimensions[dimname]
+    end
+
     # Display a handy description
     # of the document.
     def to_s
       "#<Document:#{@id}:#{object_id}>"
     end
 
+    # Output a string describing the document
     def describe
       puts "#{@id} (#{object_id})"
       dimensions.each do |dim, value|

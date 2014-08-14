@@ -3,35 +3,16 @@
 
 module Impute
 
+  # Yeah, this is dangerous and insecure.  Ain't a production system though....
 
-  require_relative './impute/import/importer.rb'
-  require_relative './impute/import/csv_importer.rb'
+  dirs = %w{summarise retrieve retrieve/directed process sample import}
+  dirs << ''
 
-  require_relative './impute/cat'
-  require_relative './impute/document_store'
-  require_relative './impute/corpus'
-  require_relative './impute/distribution'
-
-  require_relative './impute/sample/sampler.rb'
-  require_relative './impute/sample/marginal_sampler.rb'
-  require_relative './impute/sample/conditional_sampler.rb'
-
-  require_relative './impute/summarise/heuristic.rb'
-  require_relative './impute/summarise/word_count.rb'
-
-  Dir.glob(File.join(File.dirname(__FILE__), './impute/retrieve/*.rb')) do |p|
-    require_relative p
+  dirs.each do |d|
+    Dir.glob(File.join(File.dirname(__FILE__), './impute/', d, '*.rb')) do |p|
+      require_relative p
+    end
   end
-  
-  Dir.glob(File.join(File.dirname(__FILE__), './impute/retrieve/directed/*.rb')) do |p|
-    require_relative p
-  end
-
-  
-  Dir.glob(File.join(File.dirname(__FILE__), './impute/process/*.rb')) do |p|
-    require_relative p
-  end
-
 
   VERSION = "0.1.0a"
 

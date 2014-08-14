@@ -13,7 +13,7 @@ module Impute::Process
 
     def initialize(meta_keys_to_search = ['body_str'], stoplist = 'English')
       @meta_keys_to_search = meta_keys_to_search
-      @stoplist = stoplist
+      @stoplist            = stoplist
     end
 
     def process(doc = Document.new)
@@ -33,7 +33,7 @@ module Impute::Process
 
       # Strip stuff using justext
       str = `#{JUSTEXT_COMMAND} -s #{@stoplist} '#{file.path}'`
-      warn "> Stripped #{text.to_s.length} chars to #{str.to_s.length}"
+      warn "[boilerplate] Stripped #{text.to_s.length} chars to #{str.to_s.length}"
       doc.text = str
     end
   end

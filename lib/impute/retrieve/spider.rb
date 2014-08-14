@@ -28,10 +28,13 @@ module Impute::Retrieve
       @fringe.sort! { |a, b| sorting_method.call(a, b) }
     end
 
+    # Retrieve a link from the current fringe, noting any further
+    # links within it and adding them to the fringe.
     def retrieve
-      fail "Fringe is empty." if @fringe.empty?
+      # fail "Fringe is empty." if @fringe.empty?
       
       link = @fringe.shift
+      return nil unless link  # Fringe is empty
       if link.is_a?(Mechanize::Page::Link)
         page = link.click
       else
@@ -58,6 +61,9 @@ module Impute::Retrieve
       doc.text  = body_str
 
       return doc
+    rescue StandardError => se
+      warn "*** [spider] Err: #{se}"
+      return nil
     end
 
   end
