@@ -1,4 +1,4 @@
-#!/usr/bin/rbx
+#!/usr/bin/ruby
 
 
 puts "ImputeCaT test script."
@@ -32,16 +32,13 @@ FILE    = './test/BNC_WORLD_INDEX.csv'
 FIELDS = {
           # 'Medium'      => Impute::DiscreteDistribution.new(),
           # 'Domain'      => Impute::DiscreteDistribution.new(),
-          # 'GENRE'       => Impute::DiscreteDistribution.new(),
+          'GENRE'       => Impute::DiscreteDistribution.new(),
           'Word Total'    => Impute::SmoothedGaussianDistribution.new(30),
           # 'Author Type' => Impute::DiscreteDistribution.new(),
-          # 'Aud Level'   => Impute::DiscreteDistribution.new(),
+          'Aud Level'   => Impute::DiscreteDistribution.new(),
           # 'Aud Age'     => Impute::DiscreteDistribution.new(),
+          'Language'     => Impute::DiscreteDistribution.new(),
 }
-HEURISTICS = {
-  'Word Total' => Impute::Summarise::WordCount.new
-}
-
 
 puts "Creating CSV importer"
 importer = Impute::Import::CSVImporter.new( FILE, FIELDS.keys )
@@ -101,11 +98,24 @@ SEARCH_KEY = 'RrPfZ/3LTmimYP4kGtvZHmXV9iNzhf9iZn4A7+Ry9WE'
 puts "Loading doc store"
 doc_store = nil
 doc_store = Impute::DocumentStore.read("./test/fringe") if File.exist?("./test/fringe")
+puts "Doc store has #{doc_store.length} documents" if doc_store
+
+
+
+# Define heuristics
+HEURISTICS = {
+  'Word Total' => Impute::Summarise::WordCount.new( {'en' => './resources/stoplists/English.txt'}, 'en', SEARCH_KEY )
+}
+
+# Define search strategies
+SEARCH_STRATEGIES = [
+  # STUFF
+  Impute::Retrieve::Directed::BingGenreKeywordRetriever.new('./resources/bnc_genre_keywords/', 'GENRE', 'Language'),
+]
+
 
 puts "Starting cat."
-cat = Impute::Cat.new(corpus, sampler,
-                      { 'Word Total' => Impute::Summarise::WordCount.new() },
-                     doc_store)
+cat = Impute::Cat.new(corpus, sampler, HEURISTICS, SEARCH_STRATEGIES, doc_store)
 
 # Select prototype
 puts "Selecting prototype..."

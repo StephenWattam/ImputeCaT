@@ -16,13 +16,13 @@ module Impute::Summarise
 
     # Retrieve a document from some arbitrary
     # source that conforms to the metadata given
-    def retrieve(metadata_value, num_docs = 1)
+    def retrieve(metadata_value, prototype_document, num_docs = 1)
       num_docs.times{ |n| yield(Document.new()) }
     end
 
     # Summarise a document and return a metadata
     # value
-    def summarise(document_contents, existing_metadatum_value = nil)
+    def summarise(document, existing_metadatum_value = nil)
     end
 
     def to_s

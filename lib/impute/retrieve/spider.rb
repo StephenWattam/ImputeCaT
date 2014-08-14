@@ -12,8 +12,10 @@ module Impute::Retrieve
 
     require 'mechanize'
 
-    def initialize(url = [], cookie_jar = nil)
-      @fringe = [url]
+    attr_accessor :fringe
+
+    def initialize(urls = [], cookie_jar = nil)
+      @fringe = urls
 
       # FIXME: pass in cookie jar.
       @mechanize = Mechanize.new
@@ -35,7 +37,7 @@ module Impute::Retrieve
       else
         page = @mechanize.get(link.to_s)
       end
-      @fringe << page.links
+      @fringe += page.links
 
       
       # charset           = ?
@@ -50,7 +52,9 @@ module Impute::Retrieve
       doc.meta  = doc.meta.merge( {title:         title,
                                    content_type:  content_type,
                                    base_uri:      base_uri,
-                                   last_modified: last_modified} )
+                                   last_modified: last_modified,
+                                   agent:         page
+                                  } )
       doc.text  = body_str
 
       return doc

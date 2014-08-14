@@ -20,5 +20,15 @@ module Impute::Retrieve
   end
 
 
+  class DirectedRetreiever < Retriever
+
+    include Impute
+
+    def retrieve(prototype)
+    end
+
+  end
+
+
 end
 

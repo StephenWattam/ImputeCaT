@@ -5,7 +5,7 @@
 module Impute::Retrieve
 
   require_relative './retriever.rb'
-  require_relative './url_retriever.rb'
+  require_relative './spider.rb'
 
   class SearchRetriever < Retriever
 
@@ -16,6 +16,8 @@ module Impute::Retrieve
 
     FAILURE_THRESHOLD = 5
     API_ENDPOINT = 'https://api.datamarket.azure.com/Bing/Search/Web'
+
+    attr_reader :links
 
     def initialize(key, keywords = [])
       fail "No keywords given" unless keywords.length > 0
@@ -40,14 +42,12 @@ module Impute::Retrieve
       raise "Failed to return data from search after #{@failures} retries." if @failures > FAILURE_THRESHOLD
 
       # Recurse
-      bing_search
+      @links += search
       @failures += 1 if @links.empty?
       return retrieve
     end
 
-  private
-
-    def bing_search
+    def search
       authKey = Base64.strict_encode64("#{@key}:#{@key}")
       http = Curl.get(API_ENDPOINT, {:$format => "json", :Query   => "'#{@keywords.join(' ')}'"}) do |http|
         http.headers['Authorization'] = "Basic #{authKey}"
@@ -55,15 +55,21 @@ module Impute::Retrieve
       end
 
       # Request be made here
+      links = []
       begin
         search_data = JSON.parse(http.body_str)
 
-        @links += search_data['d']['results']
+        links += search_data['d']['results']
+        puts "links: #{links.length}"
 
       rescue JSON::ParserError
         fail "Error parsing result from Bing search.  Perhaps you've exceeded your allowance?"
       end
+      @links += links
+      return links
     end
+
+  private
 
     def parse_result(r)
       type        = r['WebResult']
@@ -73,7 +79,8 @@ module Impute::Retrieve
       url         = r['Url']
       meta        = {type: type, description: description, title: title}
 
-      retriever = URLRetriever.new(url)
+      retriever = Spider.new([url])
+        # URLRetriever.new(url)
       doc = retriever.retrieve  # Oh so Java-y :-(
       
       # Fill in any missing meta
@@ -83,5 +90,27 @@ module Impute::Retrieve
     end
 
   end
+
+
+
+  # A spider that starts from a search term
+  class SearchSpider < SearchRetriever
+
+    attr_reader :spider
+
+    def initialize(bing_key, keywords)
+      super(bing_key, keywords)
+
+      urls = search
+      @spider = Spider.new(urls.map{|x| x['Url'] })
+    end
+
+    def retrieve
+      return @spider.retrieve
+    end
+
+  end
+
+
 
 end

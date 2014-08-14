@@ -22,8 +22,11 @@ module Impute
   Dir.glob(File.join(File.dirname(__FILE__), './impute/retrieve/*.rb')) do |p|
     require_relative p
   end
-
   
+  Dir.glob(File.join(File.dirname(__FILE__), './impute/retrieve/directed/*.rb')) do |p|
+    require_relative p
+  end
+
   
   Dir.glob(File.join(File.dirname(__FILE__), './impute/process/*.rb')) do |p|
     require_relative p
