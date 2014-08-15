@@ -1,0 +1,106 @@
+#!/usr/bin/rbx
+
+puts "ImputeCaT Corpus ProfileR\n"
+
+# Use bundler to import the gems.
+require 'rubygems'
+require 'bundler/setup' 
+require File.join(File.dirname(__FILE__), '../lib/impute')
+
+# Directory to find profile files in.
+PROFILE_DIR = File.join(File.dirname(__FILE__), '../profiles')
+
+
+# How often to print the progress during import.
+# Prime numbers make the output look fancier.
+UI_UPDATE_INTERVAL = 521
+
+
+# --------------------------------
+if ARGV.length < 3
+  warn "USAGE: #$0 PROFILE INPUT_CSV OUTPUT_FILE"
+  warn ""
+  warn "Profiles: "
+  Dir.glob(File.join(PROFILE_DIR, '*')) do |fn|
+    warn "  * #{File.basename(fn)}"
+  end
+  warn ""
+  warn "Using ImputeCaT lib v.#{Impute::VERSION}"
+
+  exit(1)
+end
+
+
+
+# --------------------------------
+# Load and check input
+metadata_profile_file   = File.join(PROFILE_DIR, ARGV[0]) 
+input_filename          = ARGV[1]
+output_filename         = ARGV[2]
+
+unless File.exist?(input_filename)
+  warn "Input filename #{input_filename} does not exist!"
+  exit(2)
+end
+
+unless File.exist?(metadata_profile_file)
+  warn "Metadata profile does not exist!"
+  exit(3)
+end
+
+# This loads PROFILE
+eval(File.read(metadata_profile_file))
+
+if File.exist?(output_filename)
+  warn "Output file exists.  Continue? [Y/n]"
+  confirm = ($stdin.gets.chomp.downcase != 'n')
+  unless confirm
+    warn "Aborted by user"
+    exit(4)
+  end
+end
+
+
+# --------------------------------
+# Create the importer for the format given
+#
+puts "Creating importer for input file #{File.basename(input_filename)}..."
+importer = Impute::Import::CSVImporter.new( input_filename, PROFILE[:fields].keys )
+puts "Using #{importer.to_s} to import metadata only."
+
+
+# --------------------------------
+# Create an empty corpus with the correct fields
+#
+puts "Creating a Corpus..."
+corpus = Impute::Corpus.new(PROFILE[:fields])
+puts "Corpus created using #{PROFILE[:fields].length} dimensions of metadata:"
+PROFILE[:fields].each do |name, dist_type|
+  puts "  - #{name} of type #{dist_type.to_s}"
+end
+
+
+# --------------------------------
+# Import documents from the input method into the corpus
+#
+puts "Loading Documents..."
+n = 0
+while( doc = importer.fetch_document() )
+
+  print "\r (#{n}): #{doc}" if n % UI_UPDATE_INTERVAL == 0
+
+  corpus.add(doc)
+  n += 1
+end
+puts "\nLoaded #{n} docs"
+
+
+
+# --------------------------------
+# Serialise the lot to disk
+#
+puts "Writing corpus to disk at #{File.basename(output_filename)}..."
+corpus.write(output_filename)
+puts "Done.  Have a nice day."
+
+

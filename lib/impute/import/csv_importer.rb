@@ -12,9 +12,9 @@ module Impute::Import
   class CSVImporter < Impute::Import::Importer
     require 'csv'
 
-    CSV_OPTS = {headers: true}
+    DEFAULT_CSV_OPTS = {headers: true}
 
-    def initialize(csv_file, fields = [], id_field = nil)
+    def initialize(csv_file, fields = [], id_field = nil, csv_options = DEFAULT_CSV_OPTS)
       @file     = csv_file
 
       fail "Input file does not exist: #{csv_file}" unless File.exist?(csv_file)
@@ -23,7 +23,7 @@ module Impute::Import
       @fields   = fields.map { |f| f.is_a?(Impute::Summarise::Heuristic) ? f.name : f.to_s }
 
       # Open CSV file
-      @csv = CSV.open(@file, "r", CSV_OPTS)
+      @csv = CSV.open(@file, "r", csv_options)
     end
 
 

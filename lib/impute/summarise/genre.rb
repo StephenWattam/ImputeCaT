@@ -19,20 +19,27 @@ module Impute::Summarise
 
     FILE_EXTENSION = '.wrd.fql.csv'
 
-    def initialize(frequency_list_dir, stoplist_file, threshold = 5)
-     # Load keyword lists for each category
-      keyword_lists = {}
-      Dir.glob(File.join(frequency_list_dir, "*#{FILE_EXTENSION}")) do |filename|
-        category_name                = File.basename(filename, FILE_EXTENSION)
-        keyword_lists[category_name] = filename
+    def initialize(frequency_list_dir, stoplist_file = nil, threshold = 5)
+
+      unless File.directory?(frequency_list_dir)
+        warn "[genre] Loading classifier data from memdump: #{frequency_list_dir}..."
+        @classifier = ListClassifier.new(frequency_list_dir)
+      else
+
+        # Load keyword lists for each category
+        keyword_lists = {}
+        Dir.glob(File.join(frequency_list_dir, "*#{FILE_EXTENSION}")) do |filename|
+          category_name                = File.basename(filename, FILE_EXTENSION)
+          keyword_lists[category_name] = filename
+        end
+
+        # Load stoplist
+        stoplist      = File.read(stoplist_file).lines.map{|x| x.chomp.strip.downcase }
+
+        # Construct a new classifier
+        warn "[genre] Constructing classifier..."
+        @classifier = ListClassifier.new(keyword_lists, stoplist, threshold)
       end
-
-      # Load stoplist
-      stoplist      = File.read(stoplist_file).lines.map{|x| x.chomp.strip.downcase }
-
-      # Construct a new classifier
-      warn "[genre] Constructing classifier..."
-      @classifier = ListClassifier.new(keyword_lists, stoplist, threshold)
     end
 
     # Summarise a document and return a metadata
@@ -48,8 +55,24 @@ module Impute::Summarise
       text = document.text.to_s
 
       warn "[genre] Classifying #{text.split.length} words..."
-      return @classifier.classify(text)
+      cat, score = @classifier.classify(text)
+      return cat
     end
+
+
+    # Return distance 
+    def distance(prototype_value, document_value)
+      # TODO: correlate the two lists to determine distance
+
+      distance = @classifier.class_distance(prototype_value, document_value)
+    rescue StandardError => e
+      warn "[genre] Error measuring class distance (#{prototype_value} / #{document_value}): #{e}"
+
+      # If the class doesn't exist, don't penalise all documents unnecessarily,
+      # just discount it.
+      return 0
+    end
+
 
   end
 
@@ -105,7 +128,6 @@ module Impute::Summarise
       str.each {|w| str_freqs[w] ||= 0; str_freqs[w] += 1 }
       str_freqs = rank(str_freqs)
 
-
       scores = {}
       @lists.each do |category, wordlist|
         scores[category] = score_list(str, str_freqs, wordlist)
@@ -126,6 +148,15 @@ module Impute::Summarise
 
       # Read string and pass it to classify
       return classify(File.read(filename))
+    end
+
+    # Compute class distance, 0 to 1 inclusive with 1 being most different
+    def class_distance(cla, clb)
+      fail "Class #{cla} does not exist." unless @lists[cla]
+      fail "Class #{clb} does not exist." unless @lists[clb]
+
+      corr = score_list(@lists[cla].keys, @lists[cla], @lists[clb])
+      return 1.0 - corr.abs
     end
 
   private

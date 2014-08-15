@@ -2,7 +2,6 @@ source 'https://rubygems.org'
 
 gem 'multilog', '~> 0.1.0a'
 gem 'pry', '~> 0.10'
-# gem 'azure', '~> 0.6.4'
 
 gem 'curb', '~> 0.8.6'
 

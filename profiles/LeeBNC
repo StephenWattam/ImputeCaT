@@ -1,0 +1,53 @@
+# vi:syntax=ruby
+
+# Corpus profile
+#
+
+
+AUDIENCE_LEVEL_FLEISCH_SCORES = {
+  'low'  =>  80,
+  'med'  =>  55,
+  'high' =>  30
+}
+
+
+
+PROFILE = {
+
+  # CSV fields mapped to their distribution type
+  fields: {
+          # 'Medium'      => Impute::DiscreteDistribution.new(),
+          # 'Domain'      => Impute::DiscreteDistribution.new(),
+          'GENRE'         => Impute::DiscreteDistribution.new(),
+          'Word Total'    => Impute::SmoothedGaussianDistribution.new(30),
+          # 'Author Type' => Impute::DiscreteDistribution.new(),
+          'Aud Level'     => Impute::DiscreteDistribution.new(),
+          # 'Aud Age'     => Impute::DiscreteDistribution.new(),
+          'Language'      => Impute::DiscreteDistribution.new(),
+  },
+
+  # Parameters for the full conditional sampler
+  resampling_params: {:z => 1.645, sd: 30},
+
+
+  # Define heuristics
+  heuristics: {
+    'Word Total'    => Impute::Summarise::WordCount.new( 10000 ),
+    'GENRE'         => Impute::Summarise::Genre.new('./resources/list_classifier_dump.dat'),
+                                                    #'resources/bnc_genre_frequencies/', './resources/stoplists/English.txt'),
+    'Aud Level'     => Impute::Summarise::AudienceLevel.new(AUDIENCE_LEVEL_FLEISCH_SCORES, 'med'),
+  },
+
+
+  # Define search strategies
+  search_strategies: [
+    # STUFF
+    Impute::Retrieve::Directed::BingGenreKeywordRetriever.new(SEARCH_KEY, './resources/bnc_genre_keywords/', 'GENRE', 'Language'),
+  ],
+
+
+  docs_per_retrival_method: 10,
+
+}
+
+

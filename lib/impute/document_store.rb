@@ -8,6 +8,12 @@ module Impute
 
   class DocumentStore < Hash
 
+    def make_serialisable!
+      self.each do |k, v|
+        v.make_serialisable!
+      end
+    end
+
     # Write to an IO handle
     def write(io)
       if io.is_a?(String)

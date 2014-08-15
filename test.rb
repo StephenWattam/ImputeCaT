@@ -66,6 +66,28 @@ puts "Loaded #{n} docs."
 puts "Write to disk"
 corpus.write("./test/test.corpus")
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # --------------------------------
 puts "Some random values:"
 puts "computed_words"
@@ -104,16 +126,18 @@ AUDIENCE_LEVEL_FLEISCH_SCORES = {
 
 puts "Loading doc store"
 doc_store = nil
-# doc_store = Impute::DocumentStore.read("./test/fringe") if File.exist?("./test/fringe")
+doc_store = Impute::DocumentStore.read("./test/fringe") if File.exist?("./test/fringe")
 puts "Doc store has #{doc_store.length} documents" if doc_store
 
+OUTPUT_DIR = './test/output'
 
-
+MAX_WORD_DISTANCE = 1000
 
 # Define heuristics
 HEURISTICS = {
-  'Word Total' => Impute::Summarise::WordCount.new( ),
-  'GENRE'      => Impute::Summarise::Genre.new('resources/bnc_genre_frequencies/', './resources/stoplists/English.txt'),
+  'Word Total' => Impute::Summarise::WordCount.new( MAX_WORD_DISTANCE ),
+  'GENRE'      => Impute::Summarise::Genre.new('./resources/list_classifier_dump.dat'),
+    #'resources/bnc_genre_frequencies/', './resources/stoplists/English.txt'),
   'Aud Level'   => Impute::Summarise::AudienceLevel.new(AUDIENCE_LEVEL_FLEISCH_SCORES, 'med'),
 }
 
@@ -123,19 +147,29 @@ SEARCH_STRATEGIES = [
   Impute::Retrieve::Directed::BingGenreKeywordRetriever.new(SEARCH_KEY, './resources/bnc_genre_keywords/', 'GENRE', 'Language'),
 ]
 
+puts "Creating output in #{OUTPUT_DIR}..."
+output_handler = Impute::OutputHandler.new(OUTPUT_DIR)
+
 
 puts "Starting cat."
-cat = Impute::Cat.new(corpus, sampler, HEURISTICS, SEARCH_STRATEGIES, doc_store)
+cat = Impute::Cat.new(corpus, sampler, HEURISTICS, SEARCH_STRATEGIES, doc_store, output_handler)
+
+
 
 # Select prototype
 puts "Selecting prototype..."
 cat.select_prototype
 
 puts "Retrieving documents..."
-cat.seek_documents
+cat.seek_documents(10)
+
+
+puts "Identifying best document out of #{cat.fringe.length}"
+cat.select_best   # outputs a single document
 
 puts "Saving doc store..."
-# cat.fringe.write("./test/fringe")
+cat.fringe.make_serialisable!
+cat.fringe.write("./test/fringe")
 
 require 'pry'; pry binding;
 

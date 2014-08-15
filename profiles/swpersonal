@@ -1,0 +1,25 @@
+# vi:syntax=ruby
+
+# Corpus profile
+#
+
+PROFILE = {
+
+  # Steve Wattam's personal corpus data fields.
+  #
+  # CSV name mapped to type.
+  fields: => {
+          'source'                    => Impute::DiscreteDistribution.new(),
+          'source2'                   => Impute::DiscreteDistribution.new(),
+          'Informal genre/purpose'    => Impute::DiscreteDistribution.new(),
+          'medium'                    => Impute::DiscreteDistribution.new(),
+          'portion read'              => Impute::SmoothedGaussianDistribution.new(0.1),
+          'domain'                    => Impute::DiscreteDistribution.new(),
+          'computed_unadjusted_words' => Impute::SmoothedGaussianDistribution.new(10),
+          'computed_words'            => Impute::SmoothedGaussianDistribution.new(10),
+  },
+
+  # Parameters for the full conditional sampler
+  resampling_params: {:z => 1.645, sd: 10},
+
+}

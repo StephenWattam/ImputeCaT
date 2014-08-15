@@ -77,19 +77,19 @@ module Impute::Retrieve::Directed
 
       n.times do
     
-        puts "-> #{keywords}"
+        # puts "-> #{keywords}"
 
         counter = rand * @keyword_sums[category].to_f
-        puts "-> coubnter: #{counter}"
+        # puts "-> coubnter: #{counter}"
         keys.each do |kw|
           score = @keyword_lists[category][kw]
-          puts "ct: #{counter} -= #{score} (#{kw})"
+          # puts "ct: #{counter} -= #{score} (#{kw})"
           counter -= score.to_f
           
 
           # Skip out at end of counter
           if counter <= 0.0
-            puts "Adding #{kw}."
+            # puts "Adding #{kw}."
             keywords << kw 
             keys.delete(kw)
             break

@@ -18,6 +18,12 @@ module Impute
       @meta       = meta
     end
 
+    # Remove anything that would prevent ruby from serialising
+    # this hash
+    def make_serialisable!
+      @meta.delete(:agent)
+    end
+
     # Access a dimension by name
     def [](dimname)
       @dimensions[dimname]

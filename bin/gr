@@ -1,0 +1,191 @@
+#!/usr/bin/rbx
+
+puts "ImputeCaT Golden [standard] Retriever\n"
+
+# Use bundler to import the gems.
+require 'rubygems'
+require 'bundler/setup' 
+require File.join(File.dirname(__FILE__), '../lib/impute')
+
+# Directory to find profile files in.
+PROFILE_DIR = File.join(File.dirname(__FILE__), '../profiles')
+
+# How often to print the progress during import.
+# Prime numbers make the output look fancier.
+UI_UPDATE_INTERVAL = 521
+
+# Bing search key
+SEARCH_KEY = 'RrPfZ/3LTmimYP4kGtvZHmXV9iNzhf9iZn4A7+Ry9WE'
+
+
+# --------------------------------
+if ARGV.length < 3
+  warn "USAGE: #$0 PROFILE CORPUS_FILE OUTPUT_DIRECTORY [FRINGE]"
+  warn ""
+  warn "Profiles: "
+  Dir.glob(File.join(PROFILE_DIR, '*')) do |fn|
+    warn "  * #{File.basename(fn)}"
+  end
+  warn ""
+  warn "Using ImputeCaT lib v.#{Impute::VERSION}"
+
+  exit(1)
+end
+
+
+
+# --------------------------------
+# Load and check input
+metadata_profile_file   = File.join(PROFILE_DIR, ARGV[0]) 
+corpus_file             = ARGV[1]
+output_dirname          = ARGV[2]
+fringe_filename         = ARGV[3]
+
+unless File.exist?(corpus_file)
+  warn "Corpus file does not exist"
+  exit(2)
+end
+
+unless File.exist?(metadata_profile_file)
+  warn "Metadata profile does not exist!"
+  exit(3)
+end
+
+# This loads PROFILE
+eval(File.read(metadata_profile_file))
+
+# Check output dir
+unless File.directory?(output_dirname)
+  warn "Output dir is not a dir.  Cannot continue."
+  exit(4)
+end
+if File.exist?(output_dirname)
+  warn "Output directory exists.  Continue? [Y/n]"
+  confirm = ($stdin.gets.chomp.downcase != 'n')
+  unless confirm
+    warn "Aborted by user"
+    exit(4)
+  end
+else
+  require 'fileutils'
+  FileUtils.mkdir_p(output_dirname)
+end
+
+# --------------------------------
+# Load corpus from disk
+puts "Loading corpus from #{corpus_file}..."
+corpus = Impute::Corpus.read(corpus_file)
+
+
+# --------------------------------
+puts "Building sampler for corpus #{corpus}..."
+
+# FIXME: some way of selecting the other samplers
+# sampler = Impute::Sample::MarginalSampler.new(corpus)
+# sampler = Impute::Sample::RandomConditionalSampler.new(corpus, 1, 10)
+
+puts "Using full conditional sampling with Z = #{PROFILE[:resampling_params][:z]}, sd = #{PROFILE[:resampling_params][:sd]}"
+sampler = Impute::Sample::FullConditionalSampler.new(corpus, PROFILE[:resampling_params][:sd].to_f * PROFILE[:resampling_params][:z].to_f)
+
+
+
+#
+# --------------------------------
+# TODO: make an optional demo mode that retrieves and prints
+#       some of the sampled documents
+#
+# puts "Retrieving #{TARGET_N} docs..."
+# TARGET_N.times do |n|
+#
+#   doc = sampler.get
+#   doc.describe
+#   puts "-> #{corpus.sample(doc)}"
+#
+# end
+#
+#
+
+# --------------------------------
+puts "Creating fringe document store..."
+doc_store = nil
+if fringe_filename && File.exist?(fringe_filename)
+  puts "Loading fringe from #{File.basename(fringe_filename)}..."
+  doc_store = Impute::DocumentStore.read(fringe_filename) 
+else
+  doc_store = Impute::DocumentStore.new()
+end
+puts "Doc store has #{doc_store.length} documents"
+
+
+# --------------------------------
+# Create output handler
+puts "Creating output in #{output_dirname}..."
+output_handler = Impute::OutputHandler.new(output_dirname)
+
+
+# --------------------------------
+# Create cat, that handles state during retrieval
+#
+puts "Starting state handler (cat)..."
+cat = Impute::Cat.new(corpus, sampler, PROFILE[:heuristics], PROFILE[:search_strategies], doc_store, output_handler)
+
+
+
+# --------------------------------
+# Select prototype
+begin
+
+  loop do 
+
+    puts "\n\n------------------------------------------------------"
+    puts "Selecting prototype..."
+    cat.select_prototype
+    
+    puts "\nSeeking:"
+    cat.prototype.describe
+    puts "\n"
+
+    puts "Retrieving #{PROFILE[:docs_per_retrival_method]} documents..."
+    cat.seek_documents(PROFILE[:docs_per_retrival_method].to_i)
+    puts "Fringe has #{cat.fringe.length} documents"
+
+    puts "Identifying best document out of #{cat.fringe.length} candidates"
+    doc = cat.select_best   # outputs a single document
+
+    # Check we actually found a best ranked one
+    unless doc
+      warn "*** No documents were returned that could be ranked, so the best one is nil!"
+      next
+    end
+    puts "Document: #{doc}:"
+    doc.describe
+
+    puts "Docs outputted during first run: #{output_handler.count}"
+  end
+
+rescue StandardError => se
+  warn "Error (I wasn't told I'd have to deal with this.  Aborting.):\n#{se} \n #{se.backtrace.join("\n")}"
+rescue SystemExit, Interrupt
+  warn "Interrupt."
+end
+
+# --------------------------------
+# Save the fringe again if one was given
+
+if(fringe_filename)
+  puts "Saving fringe to #{File.basename(fringe_filename)}..."
+  begin
+    cat.fringe.make_serialisable!
+    cat.fringe.write("./test/fringe")
+  rescue StandardError => se
+    warn "Some error when writing fringe.  Use pry to fix this or hit ^D to exit."
+    warn "Error: #{e}\n#{e.backtrace.join("\n")}"
+    
+    require 'pry'
+    pry binding
+
+    exit(1)
+  end
+end
+
+puts "Closing successfully.  Woo."

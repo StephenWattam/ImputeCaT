@@ -12,6 +12,8 @@ module Impute::Summarise
     # Initialise the audience level heuristic using a 
     #
     # cat => Fleisch-Kincaid reading score hash
+    #
+    # ** Ensure that the categories are given in-order!
     def initialize(categories, default)
       @categories = categories
 
@@ -37,6 +39,17 @@ module Impute::Summarise
       warn "[audlvl] Score for #{text.split.length} words is #{score} = #{level}"
 
       return level
+    end
+
+    # Return distance, normalised 0-1
+    def distance(prototype_value, document_value)
+      max = @categories.length
+
+      position_a = @categories.keys.index(prototype_value) || 0
+      position_b = @categories.keys.index(document_value)  || 0
+
+      # Normalise
+      return ((position_a - position_b).to_f / max.to_f).abs
     end
 
     def to_s
