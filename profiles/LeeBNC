@@ -42,8 +42,12 @@ PROFILE = {
   # Define search strategies
   search_strategies: [
     # STUFF
-    Impute::Retrieve::Directed::BingGenreKeywordRetriever.new(SEARCH_KEY, './resources/bnc_genre_keywords/', 'GENRE', 'Language'),
+    # Impute::Retrieve::Directed::BingGenreKeywordRetriever.new(SEARCH_KEY, './resources/bnc_genre_keywords/', 'GENRE', 'Language'),
+    Impute::Retrieve::Directed::Simulator.new(Impute::DocumentStore.read('./test/fringe')),
   ],
+
+  
+  error_handler: Impute::Error::Mean.new(),
 
 
   docs_per_retrival_method: 10,

@@ -20,13 +20,12 @@ module Impute::Summarise
       @fkscorer = FleschKincaidRanker.new()
     end
 
-    # Summarise a document and return a metadata
     # value
     def summarise(document, existing_metadatum_value = nil)
       text = document.text
       score = @fkscorer.reading_ease(text)
 
-      return @default_category if score.nil?
+      return 1 if score.nil?
 
       # Compute distance to each ideal
       cat_scores = {}
@@ -41,15 +40,20 @@ module Impute::Summarise
       return level
     end
 
-    # Return distance, normalised 0-1
-    def distance(prototype_value, document_value)
-      max = @categories.length
-
+    # Return non-normalised distance
+    def difference(prototype_value, document_value)
       position_a = @categories.keys.index(prototype_value) || 0
       position_b = @categories.keys.index(document_value)  || 0
 
+      (position_a - position_b).to_f
+    end
+
+    # Return distance, normalised 0-1
+    def norm_distance(prototype_value, document_value)
+      max = @categories.length
+
       # Normalise
-      return ((position_a - position_b).to_f / max.to_f).abs
+      return (difference(prototype_value, document_value) / max.to_f).abs
     end
 
     def to_s

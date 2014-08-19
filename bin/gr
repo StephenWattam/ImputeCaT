@@ -127,7 +127,7 @@ output_handler = Impute::OutputHandler.new(output_dirname)
 # Create cat, that handles state during retrieval
 #
 puts "Starting state handler (cat)..."
-cat = Impute::Cat.new(corpus, sampler, PROFILE[:heuristics], PROFILE[:search_strategies], doc_store, output_handler)
+cat = Impute::Cat.new(corpus, sampler, PROFILE[:heuristics], PROFILE[:search_strategies], doc_store, output_handler, PROFILE[:error_handler])
 
 
 
@@ -169,6 +169,15 @@ rescue SystemExit, Interrupt
   warn "Interrupt."
 end
 
+
+# --------------------------------
+# Output error statistics
+#
+puts "Final error stats:"
+PROFILE[:error_handler].output_error_statistics
+
+
+
 # --------------------------------
 # Save the fringe again if one was given
 
@@ -187,5 +196,6 @@ if(fringe_filename)
     exit(1)
   end
 end
+
 
 puts "Closing successfully.  Woo."

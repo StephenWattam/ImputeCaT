@@ -18,6 +18,10 @@ module Impute::Process
 
     def process(doc = Document.new)
       text = nil
+      
+      # Feign idempotence by setting a flag
+      return doc if doc.meta[:justext_run]
+      doc.meta[:justext_run] = true
 
       # Take first match
       @meta_keys_to_search.each do |m|

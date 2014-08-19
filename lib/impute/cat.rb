@@ -16,12 +16,13 @@ module Impute
     # Used only for a warning.
     MIN_DOC_LENGTH = 100  # bytes.
 
-    def initialize(seed_corpus, sampler, heuristics, strategies, fringe, output_handler)
-      @seed_corpus  = seed_corpus   # The originating corpus description
-      @sampler      = sampler       # Way of sampling from the seed corpus
-      @heuristics   = heuristics    # The heuristics for scoring/finding docs {dimension => heuristic}
-      @search_strategies = strategies # The way to look stuff up
-      @output_handler = output_handler
+    def initialize(seed_corpus, sampler, heuristics, strategies, fringe, output_handler, error_measure)
+      @seed_corpus  = seed_corpus      # The originating corpus description
+      @sampler      = sampler          # Way of sampling from the seed corpus
+      @heuristics   = heuristics       # The heuristics for scoring/finding docs {dimension => heuristic}
+      @search_strategies = strategies  # The way to look stuff up
+      @output_handler = output_handler # What to do with selected documents
+      @error_measure  = error_measure  # How to measure error
 
       @fringe       = fringe || DocumentStore.new()
       @prototype    = nil
@@ -75,29 +76,31 @@ module Impute
 
         # For each heuristic, add to the list
         @heuristics.each do |key, heuristic|
-          score = heuristic.distance(@prototype[key], doc[key]).to_f
-          puts "-> #{id}[#{key}] = #{score}"
+          score = heuristic.norm_distance(@prototype[key], doc[key]).to_f
+          # puts "-> #{id}[#{key}] = #{score}"
           list << score
         end
 
         # Create a vector from the list, and return its magnitude
         # to normalise
         v = Vector.[](*list)
-
         
         distances[id] = v.magnitude
       end
 
       
       id, distance = distances.sort_by{|id, dist| dist}.first
-      warn "[cat] Selecting document #{id} with distance #{distance} to prototype."
+      w_id, w_distance = distances.sort_by{|id, dist| dist}.last
+      warn "[cat] Selecting document #{id} with distance #{distance} to prototype (worst is #{id} with #{w_distance})."
 
       # Read doc, remove from fringe, add to output handler
       doc = @fringe[id]
       @fringe.delete(id)
 
       # TODO: compute MSE and store in the cat for retrieval
+      @error_measure.accept(prototype, doc, @heuristics)
       # mse[dimension] = non-normalised-diff(prototype[dimension], doc[dimension])
+      @error_measure.output_error_statistics
 
       # Write out and return
       @output_handler.write(doc)

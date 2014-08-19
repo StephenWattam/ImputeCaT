@@ -10,7 +10,6 @@ require File.join(File.dirname(__FILE__), '../lib/impute')
 # Directory to find profile files in.
 PROFILE_DIR = File.join(File.dirname(__FILE__), '../profiles')
 
-
 # How often to print the progress during import.
 # Prime numbers make the output look fancier.
 UI_UPDATE_INTERVAL = 521
@@ -99,8 +98,9 @@ puts "\nLoaded #{n} docs"
 # --------------------------------
 # Serialise the lot to disk
 #
+puts "\n\n"
 puts "Writing corpus to disk at #{File.basename(output_filename)}..."
 corpus.write(output_filename)
 puts "Done.  Have a nice day."
 
-
+# vim: syntax=ruby

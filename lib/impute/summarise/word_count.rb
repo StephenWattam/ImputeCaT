@@ -22,9 +22,13 @@ module Impute::Summarise
       document.text.to_s.split(/\s+/).length
     end
 
+    def difference(prototype_value, document_value)
+      return (prototype_value.to_i - document_value.to_i).to_i
+    end
+
     # Return distance, 0-1
-    def distance(prototype_value, document_value)
-      word_distance = (prototype_value.to_i - document_value.to_i).abs
+    def norm_distance(prototype_value, document_value)
+      word_distance = difference(prototype_value, document_value).abs
       
       if word_distance > @max_word_distance
         warn "[wordct] Max word distance (#{@max_word_distance}) exceeded: #{word_distance}"

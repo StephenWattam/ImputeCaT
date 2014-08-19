@@ -5,7 +5,7 @@ module Impute
 
   # Yeah, this is dangerous and insecure.  Ain't a production system though....
 
-  dirs = %w{summarise retrieve retrieve/directed process sample import}
+  dirs = %w{summarise retrieve retrieve/directed process sample import error}
   dirs << ''
 
   dirs.each do |d|

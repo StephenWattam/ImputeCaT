@@ -20,7 +20,6 @@ module Impute::Summarise
     FILE_EXTENSION = '.wrd.fql.csv'
 
     def initialize(frequency_list_dir, stoplist_file = nil, threshold = 5)
-
       unless File.directory?(frequency_list_dir)
         warn "[genre] Loading classifier data from memdump: #{frequency_list_dir}..."
         @classifier = ListClassifier.new(frequency_list_dir)
@@ -59,9 +58,13 @@ module Impute::Summarise
       return cat
     end
 
+    # Difference is on same scale as norm_distance
+    def difference(prototype_value, document_value)
+      return norm_distance(prototype_value, document_value)
+    end
 
     # Return distance 
-    def distance(prototype_value, document_value)
+    def norm_distance(prototype_value, document_value)
       # TODO: correlate the two lists to determine distance
 
       distance = @classifier.class_distance(prototype_value, document_value)
