@@ -35,7 +35,7 @@ module Impute
     end
 
     def seek_documents(n)
-     
+
       @search_strategies.each do |search_strategy|
         warn "[cat] Using search strategy #{search_strategy}"
 
@@ -49,7 +49,7 @@ module Impute
           process_raw_document(doc)
 
           warn "[cat] Document text length (clean) below #{MIN_DOC_LENGTH}b" if doc.text.to_s.length < MIN_DOC_LENGTH
-          
+
           # impute metadata
           impute_document(doc)
 
@@ -84,11 +84,11 @@ module Impute
         # Create a vector from the list, and return its magnitude
         # to normalise
         v = Vector.[](*list)
-        
+
         distances[id] = v.magnitude
       end
 
-      
+
       id, distance = distances.sort_by{|id, dist| dist}.first
       w_id, w_distance = distances.sort_by{|id, dist| dist}.last
       warn "[cat] Selecting document #{id} with distance #{distance} to prototype (worst is #{id} with #{w_distance})."
@@ -130,7 +130,7 @@ module Impute
       doc_scores_by_id.each do |id, score|
         norm_scores[id] = (score - min_dist) / range
       end
-      
+
       return norm_scores, doc_scores_by_id
     end
 
