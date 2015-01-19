@@ -4,10 +4,15 @@
 #
 
 
+#Readability ranks: 
+# -  low: 664  items, mean = 62.95293871760397, sd = 14.424512199650604, var = 208.06655219786907
+# -  med: 1651 items, mean = 55.44412267430666, sd = 12.76812426643693,  var = 163.02499728317557
+# - high: 820  items, mean = 47.70965585209567, sd = 12.445956325065204, var = 154.90182884543054
+# -  ---: 914  items, mean = 82.02288020623476, sd = 20.6424573733852,   var = 426.111046412025
 AUDIENCE_LEVEL_FLEISCH_SCORES = {
-  'low'  =>  80,
+  'low'  =>  62,
   'med'  =>  55,
-  'high' =>  30
+  'high' =>  47
 }
 
 
@@ -20,6 +25,7 @@ PROFILE = {
           # 'Domain'      => Impute::DiscreteDistribution.new(),
           'GENRE'         => Impute::DiscreteDistribution.new(),
           'Word Total'    => Impute::SmoothedGaussianDistribution.new(30),
+          'Flesch'        => Impute::SmoothedGaussianDistribution.new(13.16 / 4),
           # 'Author Type' => Impute::DiscreteDistribution.new(),
           'Aud Level'     => Impute::DiscreteDistribution.new(),
           # 'Aud Age'     => Impute::DiscreteDistribution.new(),

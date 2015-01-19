@@ -32,12 +32,12 @@ FILE    = './test/BNC_WORLD_INDEX.csv'
 FIELDS = {
           # 'Medium'      => Impute::DiscreteDistribution.new(),
           # 'Domain'      => Impute::DiscreteDistribution.new(),
-          'GENRE'       => Impute::DiscreteDistribution.new(),
+          'GENRE'         => Impute::DiscreteDistribution.new(),
           'Word Total'    => Impute::SmoothedGaussianDistribution.new(30),
           # 'Author Type' => Impute::DiscreteDistribution.new(),
-          'Aud Level'   => Impute::DiscreteDistribution.new(),
+          'Aud Level'     => Impute::DiscreteDistribution.new(),
           # 'Aud Age'     => Impute::DiscreteDistribution.new(),
-          'Language'     => Impute::DiscreteDistribution.new(),
+          'Language'      => Impute::DiscreteDistribution.new(),
 }
 
 puts "Creating CSV importer"
