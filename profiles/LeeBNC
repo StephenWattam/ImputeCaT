@@ -2,9 +2,12 @@
 
 # Corpus profile
 #
+# Designed to read Lee's BNC index as CSV
+#
+#
+#
 
-
-#Readability ranks: 
+#Readability ranks:
 # -  low: 664  items, mean = 62.95293871760397, sd = 14.424512199650604, var = 208.06655219786907
 # -  med: 1651 items, mean = 55.44412267430666, sd = 12.76812426643693,  var = 163.02499728317557
 # - high: 820  items, mean = 47.70965585209567, sd = 12.445956325065204, var = 154.90182884543054
@@ -25,11 +28,11 @@ PROFILE = {
           # 'Domain'      => Impute::DiscreteDistribution.new(),
           'GENRE'         => Impute::DiscreteDistribution.new(),
           'Word Total'    => Impute::SmoothedGaussianDistribution.new(30),
-          'Flesch'        => Impute::SmoothedGaussianDistribution.new(13.16 / 4),
+          # 'Flesch'        => Impute::SmoothedGaussianDistribution.new(13.16 / 4),
           # 'Author Type' => Impute::DiscreteDistribution.new(),
           'Aud Level'     => Impute::DiscreteDistribution.new(),
           # 'Aud Age'     => Impute::DiscreteDistribution.new(),
-          'Language'      => Impute::DiscreteDistribution.new(),
+          # 'Language'      => Impute::DiscreteDistribution.new(),
   },
 
   # Parameters for the full conditional sampler
@@ -41,7 +44,7 @@ PROFILE = {
     'Word Total'    => Impute::Summarise::WordCount.new( 10000 ),
     'GENRE'         => Impute::Summarise::Genre.new('./resources/list_classifier_dump.dat'),
                                                     #'resources/bnc_genre_frequencies/', './resources/stoplists/English.txt'),
-    'Aud Level'     => Impute::Summarise::AudienceLevel.new(AUDIENCE_LEVEL_FLEISCH_SCORES, 'med'),
+    'Aud Level'     => Impute::Summarise::AudienceLevel.new(AUDIENCE_LEVEL_FLEISCH_SCORES),
   },
 
 
@@ -52,7 +55,7 @@ PROFILE = {
     Impute::Retrieve::Directed::Simulator.new(Impute::DocumentStore.read('./test/fringe')),
   ],
 
-  
+
   error_handler: Impute::Error::Mean.new(),
 
 

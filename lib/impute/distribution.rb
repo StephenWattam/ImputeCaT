@@ -7,6 +7,7 @@ module Impute
 
   class Distribution
 
+    # Incorporate the value into the distribution
     def add(value)
     end
 
@@ -16,12 +17,17 @@ module Impute
       warn "STUB: rand in distribution.rb"
     end
 
+    # Duplicate
     def dup
       self.class.new
     end
 
+    # Retrieve a p[X] value at X
     def sample(value)
+    end
 
+    # Iterate over the points in this distribution
+    def each
     end
 
     def slice(value = 0)
@@ -38,8 +44,10 @@ module Impute
 
   # Distribution for discrete metadata types
   class DiscreteDistribution < Distribution
-    
+
     require 'securerandom'
+
+    attr_reader :n
 
     def initialize
       @bins = {}
@@ -63,8 +71,23 @@ module Impute
       end
     end
 
+    # Retrieve p[value] at value
     def sample(value)
       (@bins[value] || 0).to_f / @n.to_f
+    end
+
+    # Return the x, p[x] for each bin
+    def each
+      @bins.each_key do |b|
+        yield(b, sample(b))
+      end
+    end
+
+    # Not part of the 'Distribution' API,
+    # used to retrieve a non-normalised
+    # count for a bin
+    def raw_count(value)
+      @bins[value] || 0
     end
 
   end
@@ -84,7 +107,7 @@ module Impute
       @min    = 0
       @max    = 0
 
-      @bandwidth          = bandwidth
+      @bandwidth  = bandwidth
 
       @cache      = {}
     end
@@ -113,6 +136,8 @@ module Impute
       # select which gaussian distribution to sample from at uniform
       point = @points[SecureRandom.random_number(@points.length)]
 
+
+      return unless point
       # puts "--> #{point}"
 
       # Select a point on X that is within the distribution.
@@ -131,7 +156,7 @@ module Impute
       return @cache[x] if !skip_cache && @cache[x]
 
       @points.each do |mean|
-        y += (1.0 / (@bandwidth * Math.sqrt( TWO_PI ))) * 
+        y += (1.0 / (@bandwidth * Math.sqrt( TWO_PI ))) *
           Math.exp( -1 * ((x - mean) ** 2) / (2 * @bandwidth ** 2) )
       end
 
@@ -142,15 +167,22 @@ module Impute
       return y / @points.length
     end
 
+    # Iterate over each point
+    def each
+      @points.each do |value|
+        yield(value, sample(value))
+      end
+    end
+
     private
 
     # Thanks to http://stackoverflow.com/questions/5825680/code-to-generate-gaussian-normally-distributed-random-numbers-in-ruby
-    def gaussian(mean, stddev) 
-      theta = 2 * Math::PI * SecureRandom.random_number
-      rho = Math.sqrt(-2 * Math.log(1 - SecureRandom.random_number))
-      scale = stddev * rho
-      x = mean + scale * Math.cos(theta)
-      y = mean + scale * Math.sin(theta)
+    def gaussian(mean, stddev)
+      theta   = 2 * Math::PI * SecureRandom.random_number
+      rho     = Math.sqrt(-2 * Math.log(1 - SecureRandom.random_number))
+      scale   = stddev * rho
+      x       = mean + scale * Math.cos(theta)
+      y       = mean + scale * Math.sin(theta)
       return x, y
     end
 
@@ -158,7 +190,7 @@ module Impute
 
 
 
-  
+
 
 end
 

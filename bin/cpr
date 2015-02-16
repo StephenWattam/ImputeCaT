@@ -1,10 +1,16 @@
 #!/usr/bin/rbx
+#
+# Loads a corpus from CSV and, according to a profile file,
+# outputs a single file containing the
+# distribution of all metadata therein.
+#
+# e.g. ./bin/cpr LeeBNC ../ImputeCaT-eval/data/BNC_WORLD_INDEX.csv /tmp/test.corpus
 
 puts "ImputeCaT Corpus ProfileR\n"
 
 # Use bundler to import the gems.
 require 'rubygems'
-require 'bundler/setup' 
+require 'bundler/setup'
 require File.join(File.dirname(__FILE__), '../lib/impute')
 
 # Directory to find profile files in.
@@ -33,7 +39,7 @@ end
 
 # --------------------------------
 # Load and check input
-metadata_profile_file   = File.join(PROFILE_DIR, ARGV[0]) 
+metadata_profile_file   = File.join(PROFILE_DIR, ARGV[0])
 input_filename          = ARGV[1]
 output_filename         = ARGV[2]
 

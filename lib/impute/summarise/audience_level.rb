@@ -14,7 +14,7 @@ module Impute::Summarise
     # cat => Fleisch-Kincaid reading score hash
     #
     # ** Ensure that the categories are given in-order!
-    def initialize(categories, default)
+    def initialize(categories)
       @categories = categories
 
       @fkscorer = FleschKincaidRanker.new()
@@ -66,6 +66,47 @@ module Impute::Summarise
 
 
 
+  class FleschKincaid < Heuristic
+
+    # Initialise the audience level heuristic using a 
+    #
+    def initialize
+      @fkscorer = FleschKincaidRanker.new()
+    end
+
+    # value
+    def summarise(document, existing_metadatum_value = nil)
+      text = document.text
+      score = @fkscorer.reading_ease(text)
+
+      return 1 if score.nil?
+
+      warn "[flesch] Score for #{text.split.length} words is #{score}"
+
+      return score
+    end
+
+    # Return non-normalised distance
+    def difference(prototype_value, document_value)
+      (prototype_value - document_value).to_f
+    end
+
+    # Return distance, normalised 0-1
+    def norm_distance(prototype_value, document_value)
+    end
+
+    def to_s
+      "<Heuristic:#{self.class}>"
+    end
+
+  end
+
+
+
+
+
+
+
 
 
   class FleschKincaidRanker
@@ -77,7 +118,7 @@ module Impute::Summarise
     MAX_SENTENCE_LENGTH = 100
 
     def reading_ease(str)
-      
+
       sentence_count = 0
       syllable_count = 0
       word_count     = 0

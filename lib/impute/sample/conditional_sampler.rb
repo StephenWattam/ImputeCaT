@@ -13,7 +13,7 @@ module Impute::Sample
   require_relative 'sampler.rb'
 
 
-  class RandomConditionalSampler < Sampler 
+  class RandomConditionalSampler < Sampler
 
     require_relative '../distribution.rb'
     require_relative 'marginal_sampler.rb'
@@ -36,7 +36,7 @@ module Impute::Sample
       # Read distribution objects
       controlled_values = {}
       controlled_dims.each do |dim|
-                                   puts "--> '#{dim}"
+        puts "--> '#{dim}"
         controlled_values[dim] = @corpus.dimensions[dim].rand
       end
 
@@ -63,9 +63,10 @@ module Impute::Sample
     require_relative 'marginal_sampler.rb'
     require 'securerandom'
 
-    def initialize(corpus, continuous_sample_width)
+    def initialize(corpus, continuous_sample_width, quiet = false)
       super(corpus)
       @continuous_sample_width = continuous_sample_width
+      @quiet = quiet
     end
 
     def get
@@ -73,8 +74,8 @@ module Impute::Sample
       conditioned = @corpus
       conditions  = {}
 
-      puts "Selecting random document from #{@corpus}..."
-      puts " - dims: #{conditioned.dimensions.length}, docs: #{conditioned.documents.length}" #// Values: #{conditions}"
+      puts "Selecting random document from #{@corpus}..." unless @quiet
+      puts " - dims: #{conditioned.dimensions.length}, docs: #{conditioned.documents.length}"  unless @quiet#// Values: #{conditions}"
       while conditioned.dimensions.length > 1
 
         # Condition on random variable
@@ -83,9 +84,9 @@ module Impute::Sample
 
         conditioned = conditioned.conditional_corpus( {dim_to_condition_on => value_to_condition_on }, @continuous_sample_width)
         conditions[dim_to_condition_on] = value_to_condition_on
-        
-        
-        puts " - dims: #{conditioned.dimensions.length}, docs: #{conditioned.documents.length} (#{dim_to_condition_on} == #{value_to_condition_on})"
+
+
+        puts " - dims: #{conditioned.dimensions.length}, docs: #{conditioned.documents.length} (#{dim_to_condition_on} == #{value_to_condition_on})" unless @quiet
       end
 
 

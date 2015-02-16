@@ -6,7 +6,7 @@ module Impute
 
   class Corpus
 
-    attr_reader :documents
+    attr_reader :documents, :dimensions
 
     # Create a new Corpus, from
     # a list of important dimensions of the format:
@@ -15,6 +15,10 @@ module Impute
     def initialize(dimensions = {})
       @dimensions = dimensions
       @documents  = []
+    end
+
+    def size
+      @documents.length
     end
 
     def add(document)
@@ -30,8 +34,37 @@ module Impute
       @documents << document
     end
 
-    def dimensions
-      @dimensions
+    def compare_to(corpus)
+      b = corpus
+
+      fail "Cannot compare corpora with different dimensions" unless self.dimensions.keys.sort == b.dimensions.keys.sort
+
+      logliks = {}
+      self.dimensions.each do |dim, dist|
+        fail "Cannot compare continuous distributions (#{dim} is continuous)" if dist.is_a?(Impute::ContinuousDistribution)
+
+        sum = 0
+        dist.each do |x_i, _|
+          o = dist.raw_count(x_i)
+
+          e = dist.n * (b[dim].raw_count(x_i) + o) / (self.size + b.size).to_f
+          # puts "=> #{o} / #{e}"
+
+          # compute this iteration's contribution to loglik score
+          ll_cont = o > 0 ? o * Math.log( o / e ) : 0
+          sum += ll_cont
+          # puts "#{o} = #{ll_cont}"
+        end
+
+        ll = 2 * sum
+
+        # puts "=> #{dim} = #{ll}"
+
+        logliks[dim] = ll
+
+      end
+
+      return logliks
     end
 
     def [](dimension)

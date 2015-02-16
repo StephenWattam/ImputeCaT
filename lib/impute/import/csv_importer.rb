@@ -26,8 +26,6 @@ module Impute::Import
       @csv = CSV.open(@file, "r", csv_options)
     end
 
-
-
     # Return the number of documents in ths CSV
     def count
       @csv.rewind
@@ -38,7 +36,6 @@ module Impute::Import
       return count
     end
 
-   
     # retrieve a single document's data
     def fetch_document
       # read row
